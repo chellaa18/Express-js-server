@@ -1,0 +1,107 @@
+
+//Express
+const express = require('express')
+const app = express();
+const port = 8080;
+const fs = require('fs');
+const cors = require('cors'); 
+
+const mongoose = require('mongoose');
+
+
+const mongoURI = 'mongodb://localhost:27017/persons';
+
+mongoose.connect(mongoURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
+mongoose.connection.on('connected', () => {
+  console.log('Connected to MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error: ' + err);
+});
+
+const userSchema = new mongoose.Schema({
+ 
+  id: Number,
+  name: String,
+  username: String,
+  email: String,
+
+  
+}, { collection: 'users' });
+
+const User = mongoose.model('User', userSchema);
+
+app.use(cors()); 
+app.use(express.json());
+
+// let rawdata = fs.readFileSync('users.json');
+// let users = JSON.parse(rawdata);
+
+app.get('/users', async (req, res) => {
+  try {
+    const users = await User.find({});
+ 
+    if (users && users.length > 0) {
+      res.json(users);
+    } else {
+      res.status(404).json({ message: 'No users found' });
+    }
+  } catch (err) {
+    console.error('Error retrieving users:', err);
+    res.status(500).send('Error retrieving users');
+  }
+});
+app.get('/users/:id', async (req, res) => {
+  try {
+    const user = await User.findOne({ id: req.params.id });
+ 
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (err) {
+    console.error('Error retrieving user:', err);
+    res.status(500).send('Error retrieving user');
+  }
+});
+
+
+// app.post('/users', function (req, res) {
+
+//   fs.readFile('users.json', (err, data) => {
+//     if (err) {
+ 
+//       console.error(err);
+//       return res.status(500).send('Error reading users.json');
+//     }
+
+//     let users = [];
+
+
+//     if (data.length > 0) {
+//       users = JSON.parse(data);
+//     }
+
+//     users.push(req.body);
+
+//     fs.writeFile('users.json', JSON.stringify(users, null, 3), (err) => {
+//       if (err) {
+
+//         console.error(err);
+//         return res.status(500).send('Error writing to users.json');
+//       }
+
+//       console.log('Data added to users.json');
+//       res.send("Data received and added to users.json");
+//     });
+//   });
+// });
+
+
+app.listen(port, ()=>console.log(`server is running on ${port}`))
